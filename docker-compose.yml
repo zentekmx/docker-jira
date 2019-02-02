@@ -38,15 +38,14 @@ services:
     volumes:
       - jira-volume:/var/atlassian/jira
     ports:
-      - '80:8080'
+      - '8080:8080'
     environment:
       - 'JIRA_DATABASE_URL=postgresql://jira@postgresql/jiradb'
       - 'JIRA_DB_PASSWORD=jellyfish'
-      - 'SETENV_JVM_MINIMUM_MEMORY=384m'
-      - 'SETENV_JVM_MAXIMUM_MEMORY=768m'
-      - 'JIRA_PROXY_NAME='
-      - 'JIRA_PROXY_PORT='
-      - 'JIRA_PROXY_SCHEME='
+      - 'SETENV_JVM_MINIMUM_MEMORY=512m'
+      - 'SETENV_JVM_MAXIMUM_MEMORY=1024m'
+      - 'DOCKER_WAIT_HOST=postgresql'
+      - 'DOCKER_WAIT_PORT=5432'
     logging:
       # limit logs retained on host to 25MB
       driver: "json-file"
