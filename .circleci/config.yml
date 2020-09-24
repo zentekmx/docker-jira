@@ -3,108 +3,146 @@ jobs:
   build_branch:
     working_directory: /app
     docker:
-      - image: docker:17.05.0-ce-git
+      - image: docker:19-git
     steps:
       - checkout
       - setup_remote_docker
       - run:
           name: Install dependencies
           command: |
+            apk update
+            apk upgrade
             apk add --no-cache \
-              py-pip \
-              curl \
-              curl-dev
-            pip install \
-              docker-compose
+              py-pip           \
+              curl             \
+              curl-dev         \
+              bash
       - run:
           name: Build Branch Images
           command: |
             set +o pipefail
-            sh buildscripts/buildDevelopmentImages.sh
+            bash buildscripts/buildDevelopmentImages.sh
       - run:
           name: Test Branch Images
           command: |
-              sh buildscripts/testDevelopmentImages.sh
+            bash buildscripts/testDevelopmentImages.sh
 
-  build_development:
+  build_releases_core:
     working_directory: /app
     docker:
-      - image: docker:17.05.0-ce-git
+      - image: docker:19-git
     steps:
       - checkout
       - setup_remote_docker
       - run:
           name: Install dependencies
           command: |
+            apk update
+            apk upgrade
             apk add --no-cache \
-              py-pip \
-              curl \
-              curl-dev
-            pip install \
-              docker-compose
-      - run:
-          name: Build Development Images
-          command: |
-            set +o pipefail
-            sh buildscripts/buildDevelopmentImages.sh
-      - run:
-          name: Test Development Images
-          command: |
-              sh buildscripts/testDevelopmentImages.sh
-      - run:
-          name: Push Dockerhub Development Images
-          command: |
-              docker login -u ${DOCKER_USER} -p ${DOCKER_PASS}
-              sh buildscripts/releaseDevelopmentImages.sh
-
-  build_releases:
-    working_directory: /app
-    docker:
-      - image: docker:17.05.0-ce-git
-    steps:
-      - checkout
-      - setup_remote_docker
-      - run:
-          name: Install dependencies
-          command: |
-            apk add --no-cache \
-              py-pip \
-              curl \
-              curl-dev
-            pip install \
-              docker-compose
+              py-pip           \
+              curl             \
+              curl-dev         \
+              bash
       - run:
           name: Build Docker Release Images
           command: |
             set +o pipefail
-            sh buildscripts/buildSupportedJiraImages.sh
+            bash buildscripts/buildSupportedJiraImages.sh jira-core
       - run:
           name: Test Docker Release Images
           command: |
-            sh buildscripts/testSupportedJiraImages.sh
+            bash buildscripts/testSupportedJiraImages.sh jira-core
       - run:
           name: Push Dockerhub Release Images
           command: |
-              docker login -u ${DOCKER_USER} -p ${DOCKER_PASS}
-              sh buildscripts/releaseSupportedJiraImages.sh
+            docker login -u ${DOCKER_USER} -p ${DOCKER_PASS}
+            bash buildscripts/releaseSupportedJiraImages.sh jira-core
+
+  build_releases_software:
+    working_directory: /app
+    docker:
+      - image: docker:19-git
+    steps:
+      - checkout
+      - setup_remote_docker
+      - run:
+          name: Install dependencies
+          command: |
+            apk update
+            apk upgrade
+            apk add --no-cache \
+              py-pip           \
+              curl             \
+              curl-dev         \
+              bash
+      - run:
+          name: Build Docker Release Images
+          command: |
+            set +o pipefail
+            bash buildscripts/buildSupportedJiraImages.sh jira-software
+      - run:
+          name: Test Docker Release Images
+          command: |
+            bash buildscripts/testSupportedJiraImages.sh jira-software
+      - run:
+          name: Push Dockerhub Release Images
+          command: |
+            docker login -u ${DOCKER_USER} -p ${DOCKER_PASS}
+            bash buildscripts/releaseSupportedJiraImages.sh jira-software
+
+  build_releases_servicedesk:
+    working_directory: /app
+    docker:
+      - image: docker:19-git
+    steps:
+      - checkout
+      - setup_remote_docker
+      - run:
+          name: Install dependencies
+          command: |
+            apk update
+            apk upgrade
+            apk add --no-cache \
+              py-pip           \
+              curl             \
+              curl-dev         \
+              bash
+      - run:
+          name: Build Docker Release Images
+          command: |
+            set +o pipefail
+            bash buildscripts/buildSupportedJiraImages.sh servicedesk
+      - run:
+          name: Test Docker Release Images
+          command: |
+            bash buildscripts/testSupportedJiraImages.sh servicedesk
+      - run:
+          name: Push Dockerhub Release Images
+          command: |
+            docker login -u ${DOCKER_USER} -p ${DOCKER_PASS}
+            bash buildscripts/releaseSupportedJiraImages.sh servicedesk
 
 workflows:
   version: 2
   build_pipeline:
     jobs:
-      - build_releases:
+      - build_releases_core:
           filters:
             branches:
               only: master
-      - build_development:
+      - build_releases_software:
           filters:
             branches:
-              only: dev
+              only: master
+      - build_releases_servicedesk:
+          filters:
+            branches:
+              only: master
       - build_branch:
           filters:
             branches:
               ignore:
-                - dev
                 - master
   nightly:
     triggers:
@@ -115,4 +153,6 @@ workflows:
               only:
                 - master
     jobs:
-      - build_releases
+      - build_releases_core
+      - build_releases_software
+      - build_releases_servicedesk
