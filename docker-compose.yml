@@ -1,16 +1,35 @@
 version: '3'
 
 services:
-  openldap:
-    image: zentekmx/openldap:latest
-    container_name: openldap.project
-    ports:
-    - "389:389"
+  jira:
+    depends_on:
+      - postgresql
+    image: teamatldocker/jira
+    networks:
+      - jiranet
     volumes:
-    - ldap-volume:/var/lib/ldap:Z
+      - jiradata:/var/atlassian/jira
+    ports:
+      - '80:8080'
+    environment:
+      - 'JIRA_DATABASE_URL=postgresql://jira@postgresql/jiradb'
+      - 'JIRA_DB_PASSWORD=jellyfish'
+      - 'SETENV_JVM_MINIMUM_MEMORY=2048m'
+      - 'SETENV_JVM_MAXIMUM_MEMORY=4096m'
+      - 'JIRA_PROXY_NAME='
+      - 'JIRA_PROXY_PORT='
+      - 'JIRA_PROXY_SCHEME='
+    logging:
+      # limit logs retained on host to 25MB
+      driver: "json-file"
+      options:
+        max-size: "500k"
+        max-file: "50"
 
   postgresql:
-    image: blacklabelops/postgres
+    image: postgres:9.5-alpine
+    networks:
+      - jiranet
     volumes:
       - postgres-volume:/var/lib/postgresql/data
     environment:
@@ -27,31 +46,6 @@ services:
       options:
         max-size: "500k"
         max-file: "50"
-
-  jira:
-    depends_on:
-      - postgresql
-    image: blacklabelops/jira
-    volumes:
-      - jira-volume:/var/atlassian/jira
-    ports:
-      - '8080:8080'
-    environment:
-      - 'JIRA_DATABASE_URL=postgresql://jira@postgresql/jiradb'
-      - 'JIRA_DB_PASSWORD=jellyfish'
-      - 'SETENV_JVM_MINIMUM_MEMORY=512m'
-      - 'SETENV_JVM_MAXIMUM_MEMORY=1024m'
-      - 'DOCKER_WAIT_HOST=postgresql'
-      - 'DOCKER_WAIT_PORT=5432'
-    logging:
-      # limit logs retained on host to 25MB
-      driver: "json-file"
-      options:
-        max-size: "500k"
-        max-file: "50"
-    labels:
-      com.blacklabelops.description: "Atlassian Jira"
-      com.blacklabelops.service: "jira"
 
 volumes:
   ldap-volume:
