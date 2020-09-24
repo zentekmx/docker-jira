@@ -5,12 +5,10 @@ services:
     depends_on:
       - postgresql
     image: teamatldocker/jira
-    networks:
-      - jiranet
     volumes:
-      - jiradata:/var/atlassian/jira
+      - jira-volume:/var/atlassian/jira
     ports:
-      - '80:8080'
+      - '8080:8080'
     environment:
       - 'JIRA_DATABASE_URL=postgresql://jira@postgresql/jiradb'
       - 'JIRA_DB_PASSWORD=jellyfish'
@@ -28,8 +26,6 @@ services:
 
   postgresql:
     image: postgres:9.5-alpine
-    networks:
-      - jiranet
     volumes:
       - postgres-volume:/var/lib/postgresql/data
     environment:
@@ -48,6 +44,5 @@ services:
         max-file: "50"
 
 volumes:
-  ldap-volume:
   jira-volume:
   postgres-volume:
